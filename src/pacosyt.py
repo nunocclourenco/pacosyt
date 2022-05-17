@@ -145,7 +145,7 @@ class PacosytFrame(wx.Frame):
         sizer.Add(self.sim_ctrl, (0, 2),  (3,1), flag=wx.EXPAND)
         
         shell_sizer = wx.BoxSizer(wx.VERTICAL)
-        #shell_sizer.Add(wx.StaticText(self, label= " Shell:"),flag=wx.EXPAND)
+        shell_sizer.Add(wx.StaticText(self, label= "\nShell:"),flag=wx.EXPAND)
         shell_sizer.Add(wx.StaticLine(self), flag=wx.EXPAND)
         shell_sizer.Add(self.shell, flag=wx.EXPAND)
         sizer.Add(shell_sizer, (3, 0), (1,3), flag=wx.EXPAND)
