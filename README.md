@@ -1,8 +1,8 @@
 # PACOSYT: a ML based PAssive COmponent SYthesis Tool
 
-![PACOSYT: a ML based PAssive COmponent SYthesis Tool](https://github.com/nunocclourenco/pacosyt/blob/main/img/pacosyt.png)
+![PACOSYT: a ML based PAssive COmponent SYthesis Tool](img/pacosyt.png)
 
-## [Requirements](https://github.com/nunocclourenco/pacosyt/blob/main/requirements.txt) 
+## [Requirements](requirements.txt) 
 pyhton 3.8.5
 
 ipykernel==6.9.1 
