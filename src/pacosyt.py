@@ -14,7 +14,7 @@ from models import PassivesModel
 
 TOOL_NAME = "PACOSYT"
 
-TOOL_NAME_LONG = "PACOSYT: a ML based for PAssive COmponent SYthesis Tool"
+TOOL_NAME_LONG = "PACOSYT: a Machine Learning based for PAssive COmponent SYthesis Tool"
 
 TOOL_DESC = """PACOSYT is free and open source  advanced transformer and inductor 
 modeling and synthesis tool using widely adopted ML libraries."""
@@ -46,8 +46,8 @@ OTHER DEALINGS IN THE SOFTWARE."""
 
 TOOL_ICONS = ('./img/logo_large.png',
               './img/logo.png',
-              './img/institutions.jpg'
-              './img/PACOSYT.png'
+              './img/institutions.jpg',
+              './img/pacosyt.png'
               )
 
 TOOL_SHELL_INTRO = """
@@ -131,8 +131,8 @@ class PacosytFrame(wx.Frame):
 
 
         image = wx.Bitmap(TOOL_ICONS[3])
-        image = image.ConvertToImage().Scale(180, 100, wx.IMAGE_QUALITY_HIGH)
-        self.device_img= wx.StaticBitmap(self, wx.ID_ANY, size=(180, 100))
+        image = image.ConvertToImage().Scale(180, 120, wx.IMAGE_QUALITY_HIGH)
+        self.device_img= wx.StaticBitmap(self, wx.ID_ANY, wx.Bitmap(image), size=(180, 260))
         
 
         #layout
