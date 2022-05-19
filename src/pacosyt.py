@@ -46,7 +46,9 @@ OTHER DEALINGS IN THE SOFTWARE."""
 
 TOOL_ICONS = ('./img/logo_large.png',
               './img/logo.png',
-              './img/institutions.jpg')
+              './img/institutions.jpg'
+              './img/PACOSYT.png'
+              )
 
 TOOL_SHELL_INTRO = """
 This is the PACOSYT shell. Available commands are:
@@ -126,6 +128,10 @@ class PacosytFrame(wx.Frame):
         image = wx.Bitmap(TOOL_ICONS[2], wx.BITMAP_TYPE_ANY).ConvertToImage()
         image = image.Scale(459, 106, wx.IMAGE_QUALITY_HIGH)
         footer_img = wx.StaticBitmap(self, wx.ID_ANY, wx.Bitmap(image), size=(459, 106))
+
+
+        image = wx.Bitmap(TOOL_ICONS[3])
+        image = image.ConvertToImage().Scale(180, 100, wx.IMAGE_QUALITY_HIGH)
         self.device_img= wx.StaticBitmap(self, wx.ID_ANY, size=(180, 100))
         
 
