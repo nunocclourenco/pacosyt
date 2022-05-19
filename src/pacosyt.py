@@ -66,7 +66,7 @@ class PacosytFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         
         # begin wxGlade: MyFrame.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.CAPTION | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU
+        kwds["style"] = kwds.get("style", 0) | wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU
         wx.Frame.__init__(self, *args, **kwds)
         self.SetTitle(TOOL_NAME_LONG)
         _icon = wx.NullIcon
@@ -117,7 +117,7 @@ class PacosytFrame(wx.Frame):
         self.button_optimize.SetDefault()
 
 
-        self.shell = wx.py.shell.Shell(self, wx.ID_ANY, size=wx.Size(800, 300), introText = TOOL_SHELL_INTRO)
+        self.shell = wx.py.shell.Shell(self, wx.ID_ANY, size=wx.Size(800, 150), introText = TOOL_SHELL_INTRO)
         self.shell.interp.locals["passives"] = self.passives
         self.shell.interp.locals["load"] = self.load
         self.shell.interp.locals["optimize"] = self.optimize

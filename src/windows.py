@@ -71,7 +71,7 @@ class GeometricParametersCtrl(wx.Panel):
     
         #create all labels
         self.labels = {p:wx.StaticText(self, wx.ID_ANY, f"{p.capitalize()}: ", style=wx.ALIGN_CENTER_HORIZONTAL) for p in self.parameters[0:6]} 
-        self.spin_ctrl = {p:wx.SpinCtrl(self, wx.ID_ANY, min=0, max=1) for p in self.parameters[0:6]}
+        self.spin_ctrl = {p:wx.SpinCtrl(self, wx.ID_ANY, min=0, max=1, size=(100,20)) for p in self.parameters[0:6]}
 
         grid_sizer = wx.GridBagSizer(4, 4)
 
@@ -278,18 +278,18 @@ class SimulationCtrl(wx.Panel):
         super().__init__(parent, *args, **kw)
 
         #  components
-        self.canvas_sim_l = MatplotlibCanvas(self, y_label="Inductance (nH)",x_label="Frequency (GHz)")
-        self.canvas_sim_l.SetMinSize((800, 200))
+        self.canvas_sim_l = MatplotlibCanvas(self, y_label="L (nH)",x_label="Frequency (GHz)")
+        self.canvas_sim_l.SetMinSize((600, 200))
         
-        self.canvas_sim_q = MatplotlibCanvas(self, y_label="Quality Factor", x_label="Frequency (GHz)")
-        self.canvas_sim_q.SetMinSize((800, 200))
+        self.canvas_sim_q = MatplotlibCanvas(self, y_label="Q", x_label="Frequency (GHz)")
+        self.canvas_sim_q.SetMinSize((600, 200))
         
         self.slider = wx.Slider(self,value= 28, minValue = 0, maxValue = 200)
         self.labels = {}
         self.values = {} 
         
-        grid_sizer = wx.GridBagSizer( 4, 4)
-        sizer = StaticBoxSizerWithMargins(wx.StaticBox(self, wx.ID_ANY, " Simulation: "), 10, sizer = grid_sizer)
+        grid_sizer = wx.GridBagSizer( 2, 2)
+        sizer = StaticBoxSizerWithMargins(wx.StaticBox(self, wx.ID_ANY, " Simulation: "), 5, sizer = grid_sizer)
 
         grid_sizer.Add(self.canvas_sim_l, (0,0), (1,9), flag=wx.EXPAND)
         grid_sizer.Add(self.canvas_sim_q, (1,0), (1,9), flag=wx.EXPAND)
