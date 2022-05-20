@@ -20,7 +20,14 @@ matplotlib==3.5.1
 tensorflow==2.8.0
 
 ## Download and Installation
-'''TBD'''
+
+
+
+
+
+Soon, pypy
+
+
 
 ## Quick Start
 '''TBD'''
@@ -28,3 +35,6 @@ tensorflow==2.8.0
 ## Data Description
 '''TBD'''
 
+## TODOs
+Formalize testing and CI 
+Pypi packaging
