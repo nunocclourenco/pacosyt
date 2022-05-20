@@ -105,8 +105,8 @@ class PacosytFrame(wx.Frame):
         self.info.SetCopyright('(C) 2022 Instituto de Telecomunicações & IMSE-CSIC')
         self.info.SetWebSite(TOOL_REPO)
         self.info.SetLicence(TOOL_DESC)
-        self.info.AddDeveloper('N. Lourenço, F. Passos, E. Roca, R. Martins, R. Castro-López, N. Horta, F. V. Fernández')
-        #self.info.AddDocWriter('F. Passos, E. Roca, R. Martins, R. Castro-López, N. Horta, F. V. Fernández')
+        self.info.AddDeveloper('N. Lourenço, F. Passos')
+        self.info.AddDocWriter('F. Passos, E. Roca, R. Martins, R. Castro-López, N. Horta, F. V. Fernández')
 
         self.geometric_param_ctrl = wd.GeometricParametersCtrl(self,wx.ID_ANY)
         self.opt_ctrl = wd.OptimizationCtrl(self, wx.ID_ANY)
