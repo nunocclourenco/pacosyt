@@ -19,9 +19,9 @@ TOOL_NAME_LONG = "PACOSYT: a Machine Learning based for PAssive COmponent SYthes
 TOOL_DESC = """PACOSYT is free and open source  advanced transformer and inductor 
 modeling and synthesis tool using widely adopted ML libraries."""
 
-TOOL_VER = '1.0'
+TOOL_VER = '0.1'
 
-TOOL_REPO = 'http://www.github.com'
+TOOL_REPO = 'https://github.com/nunocclourenco/pacosyt'
 
 TOOL_LIC = """MIT License
 Copyright (c) 2022 Instituto de Telecomunicações & IMSE-CSIC
@@ -105,8 +105,8 @@ class PacosytFrame(wx.Frame):
         self.info.SetCopyright('(C) 2022 Instituto de Telecomunicações & IMSE-CSIC')
         self.info.SetWebSite(TOOL_REPO)
         self.info.SetLicence(TOOL_DESC)
-        self.info.AddDeveloper('N. Lourenço')
-        self.info.AddDocWriter('F. Passos, E. Roca, R. Martins, R. Castro-López, N. Horta, F. V. Fernández')
+        self.info.AddDeveloper('N. Lourenço, F. Passos, E. Roca, R. Martins, R. Castro-López, N. Horta, F. V. Fernández')
+        #self.info.AddDocWriter('F. Passos, E. Roca, R. Martins, R. Castro-López, N. Horta, F. V. Fernández')
 
         self.geometric_param_ctrl = wd.GeometricParametersCtrl(self,wx.ID_ANY)
         self.opt_ctrl = wd.OptimizationCtrl(self, wx.ID_ANY)
@@ -132,11 +132,11 @@ class PacosytFrame(wx.Frame):
 
         image = wx.Bitmap(TOOL_ICONS[3])
         image = image.ConvertToImage().Scale(180, 120, wx.IMAGE_QUALITY_HIGH)
-        self.device_img= wx.StaticBitmap(self, wx.ID_ANY, wx.Bitmap(image), size=(180, 260))
+        self.device_img= wx.StaticBitmap(self, wx.ID_ANY, wx.Bitmap(image), size=(180, 180))
         
 
         #layout
-        sizer = wx.GridBagSizer(15, 15)
+        sizer = wx.GridBagSizer(8, 8)
        
         sizer.Add(self.geometric_param_ctrl, (0, 0), (2,1), flag=wx.EXPAND|wx.ALIGN_TOP|wx.ALIGN_LEFT)
         sizer.Add(self.device_img, (0, 1), flag=wx.EXPAND|wx.ALIGN_CENTRE)
@@ -151,14 +151,14 @@ class PacosytFrame(wx.Frame):
         sizer.Add(self.sim_ctrl, (0, 2),  (3,1), flag=wx.EXPAND)
         
         shell_sizer = wx.BoxSizer(wx.VERTICAL)
-        shell_sizer.Add(wx.StaticText(self, label= "\nShell:"),flag=wx.EXPAND)
+        shell_sizer.Add(wx.StaticText(self, label= "Shell:"),flag=wx.EXPAND)
         shell_sizer.Add(wx.StaticLine(self), flag=wx.EXPAND)
         shell_sizer.Add(self.shell, flag=wx.EXPAND)
         sizer.Add(shell_sizer, (3, 0), (1,3), flag=wx.EXPAND)
       
         sizer.Add(footer_img, (4,0), (1,3), flag=wx.EXPAND|wx.ALIGN_CENTRE_VERTICAL|wx.ALIGN_RIGHT)
         
-        margin_sizer = wd.BoxSizerWithMargins(sizer=sizer)
+        margin_sizer = wd.BoxSizerWithMargins(margin=12, sizer=sizer)
         self.SetSizerAndFit(margin_sizer)
 
 
@@ -176,7 +176,7 @@ class PacosytFrame(wx.Frame):
             panel.set_device(self.passives.model['device'])
 
         bitmap = wx.Bitmap(f"./img/{self.passives.model['device']}.png")
-        image = bitmap.ConvertToImage().Scale(180, 100, wx.IMAGE_QUALITY_HIGH)
+        image = bitmap.ConvertToImage().Scale(180, 120, wx.IMAGE_QUALITY_HIGH)
         self.device_img.SetBitmap(wx.Bitmap(image))
 
         

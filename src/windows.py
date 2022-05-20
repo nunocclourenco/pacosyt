@@ -372,7 +372,7 @@ class SimulationCtrl(wx.Panel):
 class TestFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         # begin wxGlade: MyFrame.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.CAPTION | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU
+        kwds["style"] = kwds.get("style", 0) | wx.RESIZE_BORDER |  wx.CAPTION | wx.CLIP_CHILDREN | wx.CLOSE_BOX | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU
         wx.Frame.__init__(self, *args, **kwds)
         self.SetTitle("TEST")
         self.SetBackgroundColour(wx.Colour(255, 255, 255))
