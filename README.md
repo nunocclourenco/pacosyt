@@ -17,7 +17,6 @@ matplotlib==3.5.1
 
 *Only needed to run TMTT test code* 
 
-
 tensorflow==2.8.0
 
 ## Download and Installation
