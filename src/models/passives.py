@@ -1,396 +1,23 @@
-import time
-import zipfile
 import pickle
 from typing import Union
 import collections.abc
 from contextlib import redirect_stderr
+import warnings
+import matplotlib.pyplot as plt
 
-from math import pi
-import pandas as pd
 import numpy as np
-from scipy.interpolate import RBFInterpolator
-from scipy.interpolate import NearestNDInterpolator
 from scipy.optimize import NonlinearConstraint, differential_evolution
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.metrics import max_error
+from em import EMError, compute_all_lq, COMPUTE_LQ_MAP, lq_2_l, lq_2_q, lq_2_k
 
-import tensorflow.keras as keras
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import PolynomialFeatures
-
-
-from em import EMError, mape_lq_diff,mape, compute_all_lq, lq_2_str, s_2_str, COLUMNS_2P, COLUMNS_6P, COMPUTE_LQ_MAP
-
-_MODEL_CONFIG = {
-    "ind": { 'inputs':['Din', 'W'],'outputs': COLUMNS_2P[1:], "srf": ["SRF"] },
-    "ind_allT": { 'inputs':['Nt', 'Din', 'W'],'outputs': COLUMNS_2P[1:], "srf": ["SRF"]},
-    "ind_allTF":{ 'inputs':['freq', 'Nt', 'Din', 'W'],'outputs': COLUMNS_2P[1:], "srf": ["SRF"]},
-    
-
-    "trans": { 'inputs':['Dinp', 'Wp', 'Dins', 'Ws'],'outputs': COLUMNS_6P[1:], "srf": ["SRFp", "SRFs"]},
-    "trans_allT": { 'inputs':['Np', 'Ns', 'Dinp', 'Wp', 'Dins', 'Ws'],'outputs': COLUMNS_6P[1:], "srf": ["SRFp", "SRFs"]},
-    "trans_allTF":{ 'inputs':['freq', 'Np', 'Ns', 'Dinp', 'Wp', 'Dins', 'Ws'],'outputs': COLUMNS_6P[1:], "srf": ["SRFp", "SRFs"]}
-}
-
-def _load_data_transf(freq_id,nt, data_folder):
-    if freq_id is None:
-        df_train = pd.read_csv(data_folder + 'train_dataset_allTF.csv.zip', index_col=0)
-        df_test  = pd.read_csv(data_folder + 'test_dataset_allTF.csv.zip', index_col=0)
-        return  "trans_allTF", df_train, df_test
-    elif not nt:
-        zf_test = zipfile.ZipFile(data_folder + 'test_dataset_allT.csv.zip')
-        zf_train = zipfile.ZipFile(data_folder + 'train_dataset_allT.csv.zip')
-        df_train = pd.read_csv(zf_train.open(f"training_dataset_{freq_id}.csv"), index_col=0)
-        df_test = pd.read_csv(zf_test.open(f"test_dataset_{freq_id}.csv"), index_col=0)
-        zf_test.close()
-        zf_train.close()
-        return  "trans_allT", df_train, df_test
-    else :
-        zf_test = zipfile.ZipFile(data_folder + f'test_dataset_{nt[0]}_{nt[1]}T{nt[2]}.csv.zip')
-        zf_train = zipfile.ZipFile(data_folder + f'train_dataset_{nt[0]}_{nt[1]}T{nt[2]}.csv.zip')
-        df_train = pd.read_csv(zf_train.open(f"training_dataset_{freq_id}.csv"), index_col=(0))
-        df_test = pd.read_csv(zf_test.open(f"test_dataset_{freq_id}.csv"), index_col=(0))
-        zf_test.close()
-        zf_train.close()
-    return "trans", df_train, df_test
-
-
-def _load_data_ind(freq_id,nt, data_folder, skip_test):
-    if freq_id is None:
-        df_train = pd.read_csv(data_folder + 'train_dataset_allTF.csv.zip', index_col=0)
-        df_test  = df_train.copy(True) if skip_test else pd.read_csv(data_folder + 'test_dataset_allTF.csv.zip', index_col=0)
-        return  "ind_allTF", df_train, df_test
-    elif not nt:
-        zf_test = zipfile.ZipFile(data_folder + 'test_dataset_allT.csv.zip')
-        zf_train = zipfile.ZipFile(data_folder + 'train_dataset_allT.csv.zip')
-        df_train = pd.read_csv(zf_train.open(f"training_dataset_{freq_id}.csv"), index_col=(0,1))
-        df_test = df_train.copy(True) if skip_test else pd.read_csv(zf_test.open(f"test_dataset_{freq_id}.csv"), index_col=(0,1))
-        zf_test.close()
-        zf_train.close()
-        return  "ind_allT", df_train, df_test
-    else :
-        zf_test = zipfile.ZipFile(data_folder + f'test_dataset_{nt}T.csv.zip')
-        zf_train = zipfile.ZipFile(data_folder + f'train_dataset_{nt}T.csv.zip')
-        df_train = pd.read_csv(zf_train.open(f"training_dataset_{freq_id}.csv"), index_col=(0,1))
-        df_test = df_train.copy(True) if skip_test else pd.read_csv(zf_test.open(f"test_dataset_{freq_id}.csv"), index_col=(0,1))
-        zf_test.close()
-        zf_train.close()
-        return  "ind", df_train, df_test
-    
-
-
-def _load_data_filter_srf(model, srf, df_train, df_test):
-    '''remove designs based on srf. '''
-    if srf:
-        if 'ind' in model:
-            df_test = df_test[(df_test.SRF > srf) ]
-            df_train = df_train[(df_train.SRF > srf) ]
-        else:
-            df_test = df_test[(df_test.SRFp > srf + 4) ]
-            df_train = df_train[(df_train.SRFp > srf) ]
-            df_test = df_test[(df_test.SRFs > srf + 4) ]
-            df_train = df_train[(df_train.SRFs > srf) ]
-
-    return df_train, df_test
-
-
-def load_data(data_folder, freq_id = None, nt=None, srf = None, n_samples = None, filter = None, skip_test=False):
-    """ Loads CVS files and prepares data.
-    Args:
-        data_folder (string): the dataset folder
-        freq_id (int): Frequncy point id or None for all frequency points.
-        nt (int): Number of turns, None if all.
-    
-    Returns:
-        freq, X_train, Y_train, X_test, Y_test.
-    """
-    # detect model type from parameters
-    if 'induct' in data_folder:
-        model, df_train, df_test = _load_data_ind(freq_id, nt, data_folder, skip_test)
-    else:
-        model, df_train, df_test = _load_data_transf(freq_id, nt, data_folder) 
-
-   
-
-    df_train['freq'] = 1e-9*df_train['freq']
-    df_test['freq'] = 1e-9*df_test['freq']
-    if 'ind' in model:
-        df_train['SRF'] = 1e-9*df_train['SRF']
-        df_test['SRF'] = 1e-9*df_test['SRF']
-    else:
-        df_train['SRFp'] = 1e-9*df_train['SRFp']
-        df_test['SRFp'] = 1e-9*df_test['SRFp']
-        df_train['SRFs'] = 1e-9*df_train['SRFs']
-        df_test['SRFs'] = 1e-9*df_test['SRFs']
-
-    #randomize
-    df_train = df_train.sample(frac=1)
-    df_test = df_test.sample(frac=1)
-
-    if n_samples and n_samples < len(df_train) :
-        df_train = df_train.head(n_samples)
-
-    if filter:
-        df_train, df_test = filter(df_train, df_test)
-
-    x_srf_train  = df_train[_MODEL_CONFIG[model]['inputs']].values
-    y_srf_train  = df_train[_MODEL_CONFIG[model]['srf']].values
-
-    x_srf_test  = df_test[_MODEL_CONFIG[model]['inputs']].values
-    y_srf_test  = df_test[_MODEL_CONFIG[model]['srf']].values
-
-    #remove designs based on srf
-    df_train, df_test = _load_data_filter_srf(model, srf, df_train, df_test)
-
-   
-    
-    x_train  = df_train[_MODEL_CONFIG[model]['inputs']].values
-    y_train  = df_train[_MODEL_CONFIG[model]['outputs']].values
-
-    x_test  = df_test[_MODEL_CONFIG[model]['inputs']].values
-    y_test  = df_test[_MODEL_CONFIG[model]['outputs']].values
-    
-    freq = df_test['freq'].values
-    
-    return (freq, x_train, y_train, x_test, y_test, (x_srf_train,y_srf_train, x_srf_test, y_srf_test))
-
-
-def time_it(model, x_train, y_train, x_test, iters = 50):
-    '''Simple timer for the models.
-    
-    args:
-        model: some model oject with fit and predict methods.
-    
-    returns:
-        execution time
-    '''
-    timer = 0
-    for _ in range(iters):
-        t0 = time.time()
-        model.fit(x_train, y_train)
-        model.predict(x_test)
-        timer = timer + time.time() - t0
-
-    return timer/iters
-    
-
-
-def test_it(model, freq, x_train, y_train, x_test, y_test):
-    '''Simple fit and eval for the models.
-    
-    args:
-        model: some model oject with fit and predict methods.
-    
-    returns:
-        (mean_error, max_error)
-    '''
-    
-    if not isinstance(model, collections.abc.Sequence):
-        model = [model]
-
-    errors = []
-    for m in model:
-        try:
-            m.fit(x_train, y_train)
-            pred = m.predict(x_test)
-            errors.append(mape_lq_diff(freq, pred, y_test))
-        except MemoryError:
-            if y_train.shape[1] == 8:
-                errors.append(((None, None), (None, None), (None, None)))
-            else:
-                errors.append(
-                    ((None, None, None, None, None), 
-                    (None, None, None, None, None), 
-                    (None, None, None, None, None))
-                    )
-
-    
-    return errors[0] if len(errors) == 1 else errors
-
-
-def test_it_srf(model, srf_data):
-    '''Simple fit and eval for the models.
-    
-    args:
-        model: some model oject with fit and predict methods.
-    
-    returns:
-        (mean_error, max_error)
-    '''
-    
-
-    x_train, y_train, x_test, y_test = srf_data
-
-    if not isinstance(model, collections.abc.Sequence):
-        model = [model]
-
-    errors = []
-    for m in model:
-        try:
-            m.fit(x_train, y_train)
-            pred = m.predict(x_test)
-            errors.append(mape(pred, y_test))
-        except MemoryError:
-            if y_train.shape[1] == 2:
-                errors.append(((None, None), (None, None), (None, None)))
-            else:
-                errors.append(
-                    ((None), (None), (None)) 
-                    )
-
-    
-    return errors[0] if len(errors) == 1 else errors
-
-
-
-def sign_log_transform(x):
-    return np.sign(x) * np.log(np.abs(x))
-
-def sign_exp_transform(x):
-    return np.sign(x) * np.exp(-np.abs(x))
-
-
-
-class GaussianProcessRegressorModel:
-
-    def __init__(self, kernel) -> None:
-        self.model = GaussianProcessRegressor(kernel=kernel, alpha=1e-8)
-        
-    def fit(self, x_train, y_train):
-        self.model.fit(x_train, y_train)
-
-    def predict(self, x):
-        return self.model.predict(x)
-
-class RBFInterpolatorModel:
-
-    def __init__(self, degree=1) -> None:
-        self.x_scaler = StandardScaler()
-        self.degree = degree
-        
-    def fit(self, x_train, y_train):
-        x_train = self.x_scaler.fit_transform(x_train)
-        self.model = RBFInterpolator(x_train, 
-                      y_train,
-                      degree=self.degree,
-                      smoothing=0.000001)
-
-    def predict(self, x):
-        x = self.x_scaler.transform(x)
-        return self.model(x)
-
-
-class NearestNDInterpolatorModel:
-
-    def fit(self, x_train, y_train):
-        self.model = NearestNDInterpolator(x_train, y_train)
-
-    def predict(self, x_test):
-        return self.model(x_test)
-
-
-
-class ANNModel:
-
-    def __init__(self, layers = None) -> None:
-       
-        self.pre_poly = MinMaxScaler((1, 2))
-        self.poly     = PolynomialFeatures(5)
-        self.x_scaler = StandardScaler()
-        self.y_scaler = StandardScaler()
-        self.layers = layers if layers else [256, 512]
-
-        
-
-    def fit(self, x_train, y_train):
-
-        x_t = self.pre_poly.fit_transform(x_train)
-        x_t = self.poly.fit_transform(x_t)  
-        x_t = self.x_scaler.fit_transform(x_t)
-
-        y_t = self.y_scaler.fit_transform(y_train)
-
-        activation = 'relu'
-        output='linear'
-        epochs = 1000
-        loss="mse" 
-        optimizer = keras.optimizers.Adam(learning_rate=0.0001)
-
-
-        inputs = keras.Input(shape=(x_t.shape[1],), name='parameters')
-        
-        lay = inputs
-
-        for n in self.layers:
-            lay = keras.layers.Dense(n, activation=activation, 
-               kernel_regularizer=keras.regularizers.L2(0.000001), 
-               activity_regularizer=keras.regularizers.L2(0.001))(lay)
-
-        outputs = keras.layers.Dense(y_t.shape[1], activation=output, 
-            kernel_regularizer=keras.regularizers.L2(0.000001))(lay)
-        
-        self.model = keras.Model(inputs=inputs, outputs=outputs)
-        self.model.compile(
-            loss=loss,
-            optimizer=optimizer)
-        
-        self.history = self.model.fit(x_t, y_t, 
-                    epochs = epochs, 
-                    batch_size= 64, 
-                    verbose = 0)
-
-
-    def predict(self, x_test):
-        return self.y_scaler.inverse_transform(
-            self.model.predict(self.x_scaler.transform(
-                self.poly.transform(self.pre_poly.transform(x_test)))))
-
-
-def error_str(err, sr):
-    if err[1][sr] and err[0][sr]:
-        return f'{err[1][sr]:.2f}, {err[0][sr]:.2f}, '
-    else:
-        return 'None, None, '
-
-
-def error_to_csv(errors, line_headers=None, error_headers=None):
-
-    if isinstance(errors[0][0], (np.ndarray)):
-        errors = [errors]
-    
-    sr_count = len(errors[0][0][0])
-    
-    if not error_headers:
-        error_headers = ['L, ', 'Q, '] if sr_count == 2 else ['Lp, ', 'Qp, ', 'Ls, ', 'Qs, ', 'k, ']
-
-    for i, r in enumerate(errors):
-        line = list(error_headers)
-        for sr in range(sr_count):
-            for err in r:
-                line[sr] = line[sr] + error_str(err, sr)
-
-        for l in line:
-            if line_headers:
-                print(line_headers[i] + ', ' + l)
-            else: 
-                print(l)
-
-
-def value(v):
-    if not isinstance(v, (collections.abc.Sequence, np.ndarray)):
-        return v
-    return v[0]
-
-
-
+from scipy.signal import savgol_filter
 
 class AidaEmModel:
     ''' This class is the wrapper to handle the prediction and 
         optimization for multi turn multi freq model sets 
-        agenerated using the notebooks. '''
-
+        agenerated using the notebooks. Used to integrate with AIDAsoft.
+    '''
     def __init__(self, fname) -> None:
+      warnings.warn("AidaEmModel is deprecated", DeprecationWarning )
       with open(fname,'rb') as infile:
         self.model_set = pickle.load( infile)
       self.key = self.model_set['key']
@@ -473,6 +100,39 @@ class AidaEmModel:
         return pred_list
 
 
+def plot_resp( resp, axis = None):
+    figure = None
+    if not axis:
+        figure, axis = plt.subplots(2, sharex=True)
+        figure.set_size_inches(10,10)
+        plt.rcParams.update({'font.size': 12})
+
+
+    f = [r[0] for r in resp]
+    l = [lq_2_l(r[2]) for r in resp]
+    q = [lq_2_q(r[2]) for r in resp]
+
+    # due to division by a very small number sometimes Q oscilates a bit
+    q = np.array(q) 
+    q[:, 0] = savgol_filter(q[:, 0], 40, 3)
+    q[:, 1] = savgol_filter(q[:, 1], 40, 3)
+
+    axis[0].set_ylabel("L (nH)")
+    axis[0].plot(f, l, label=["Lp", "Ls"])
+    axis[0].legend()
+
+    axis[1].set_ylabel("Q")
+    axis[1].set_xlabel("Freq. (GHz)")
+    axis[1].plot(f, q, label=["Qp", "Qs"])
+    axis[1].legend()        
+    
+    if figure:
+        plt.show()
+
+
+
+
+
 class PassivesModel ():
     """Passives core class. Implements the application and 
     defines the API to simulate, optimize and create new models.
@@ -480,8 +140,10 @@ class PassivesModel ():
     aims to be easily used programmatically.
     """
     
-    def __init__(self) -> None:
+    def __init__(self, filename = None) -> None:
         self.model = None
+        if filename: 
+            self.load(filename)
 
     def load(self, filename):
         '''Loads the models from a file.
@@ -560,7 +222,7 @@ class PassivesModel ():
             the model metadata under the key "inputs".
         
         returns:
-            a list of tuples over freq(freq(float), sparam(ndarray): lq(ndarray))
+            a list of tuples over freq(freq(float), sparam(ndarray): lq(ndarray)
         
         raised:
             EMerror on invalid geometries or SRF violation
@@ -597,8 +259,18 @@ class PassivesModel ():
             self.pred_list.append((freq, pred, lq))
 
         return self.pred_list, self.pred_args
+    
+    def plot(self, axis = None):
+        plot_resp(self.pred_list, axis)
 
     def save(self, sri_fname=None, lq_fname=None):
+        '''Save the response from last prediction. 
+        Predicited S-parameters are saved in touchtone 
+        format, LQ values over frequece are stored in CSV format
+
+        args:
+            the filenames to write, None to ignore 
+        '''
         if sri_fname and lq_fname :
             with open(sri_fname, 'w') as sri_file, open(lq_fname, 'w') as lq_file:
                 self.save_response(sri_file, lq_file)

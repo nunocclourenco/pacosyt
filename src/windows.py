@@ -4,7 +4,7 @@ import wx
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 
-from em import lq_2_l, lq_2_q
+from models.passives import plot_resp
 
 class StaticBoxSizerWithMargins(wx.StaticBoxSizer):
     def __init__(self, box, margin=10, sizer = None):
@@ -71,7 +71,7 @@ class GeometricParametersCtrl(wx.Panel):
     
         #create all labels
         self.labels = {p:wx.StaticText(self, wx.ID_ANY, f"{p.capitalize()}: ", style=wx.ALIGN_CENTER_HORIZONTAL) for p in self.parameters[0:6]} 
-        self.spin_ctrl = {p:wx.SpinCtrl(self, wx.ID_ANY, min=0, max=1, size=(100,20)) for p in self.parameters[0:6]}
+        self.spin_ctrl = {p:wx.SpinCtrl(self, wx.ID_ANY, min=0, max=200) for p in self.parameters[0:6]}
 
         grid_sizer = wx.GridBagSizer(4, 4)
 
@@ -312,15 +312,12 @@ class SimulationCtrl(wx.Panel):
         self.resp = resp
         self.resp_meta = resp_meta
 
-        f = [r[0] for r in resp]
-
-        l = [lq_2_l(r[2]) for r in resp]
-        q = [lq_2_q(r[2]) for r in resp]
         self.canvas_sim_l.clear()
-        self.canvas_sim_q.clear()    
-        self.canvas_sim_l.axes.plot(f,l)
+        self.canvas_sim_q.clear()  
+
+        plot_resp(resp, (self.canvas_sim_l.axes, self.canvas_sim_q.axes))
+                 
         self.canvas_sim_l.draw()
-        self.canvas_sim_q.axes.plot(f,q)
         self.canvas_sim_q.draw()
         
         if freq:

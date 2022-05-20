@@ -33,9 +33,6 @@ def line_split(line):
     return [x.strip("(){}<>") for x in re.findall(r'[^"\s]\S*|"[^>]+"', line)]
 
 
-def var_2_str(x):
-    pass
-
 def s_2_str(freq, s_table, show_names = False):
     n, d = s_table.shape
     assert(n == 1)
@@ -52,16 +49,22 @@ def s_2_str(freq, s_table, show_names = False):
 
     return str__
 
-def lq_2_l(lq):
+
+def _extract_from_lq(lq, label):
     _, d = lq.shape
     name = LQ_IND if d == len(LQ_IND) else LQ_TRANS
-    return [ s for n, s in zip(name, lq[0]) if 'L' in n]
+    return [ s for n, s in zip(name, lq[0]) if label in n]
+
+def lq_2_l(lq):
+    return _extract_from_lq(lq, 'L')
     
 
 def lq_2_q(lq):
-    _, d = lq.shape
-    name = LQ_IND if d == len(LQ_IND) else LQ_TRANS
-    return [ s for n, s in zip(name, lq[0]) if 'Q' in n]
+    return _extract_from_lq(lq, 'Q')
+
+def lq_2_k(lq):
+    return _extract_from_lq(lq, 'k')
+
 
 def lq_2_str(freq, lq, show_names = False):
     n, d = lq.shape
