@@ -58,8 +58,9 @@ class AidaEmModel:
         
         srf_pred = mdl_srf['RBFmodel'].predict(x)
         
-        if np.min(srf_pred) < mdl_srf['srf_limit'] :
-            raise EMError(f"SRF limit not reached. Expected {mdl_srf['srf_limit']}, found {srf_pred}.")
+        srf_limit = geometry['srf_limit'] if geometry['srf_limit'] else mdl_srf['srf_limit']
+        if np.min(srf_pred) < srf_limit :
+            raise EMError(f"SRF limit not reached. Expected {srf_limit}, found {srf_pred}.")
         
    
         
