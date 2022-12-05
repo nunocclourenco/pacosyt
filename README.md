@@ -1,6 +1,6 @@
-# PACOSYT: a ML based PAssive COmponent SYthesis Tool
+# PACOSYT: an ML based PAssive COmponent SYnthesis Tool
 
-![PACOSYT: a ML based PAssive COmponent SYthesis Tool](img/screenshot.png)
+![PACOSYT: an ML based PAssive COmponent SYnthesis Tool](img/screenshot.png)
 
 ## [Requirements](requirements.txt) 
 pyhton 3.8
