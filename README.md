@@ -56,6 +56,10 @@ Once the model is done execute PACOSYT.
 - Formalize testing and CI 
 - Pypi packaging
 
+## Paper
+F. Passos et al., "PACOSYT: A Passive Component Synthesis Tool Based on Machine Learning and Tailored Modeling Strategies Towards Optimal RF and mm-Wave Circuit Designs," in IEEE Journal of Microwaves, doi: 10.1109/JMW.2023.3237260.
+
+
 ## Acknowledgements
 This research is funded by the European Unions Horizon 2020 research and innovation program under the MSCA grant agreement No. 892431 and also by the Instituto de Telecomunicações internal research projects LAY(RF)2 (X-0002-LX-20) and HAICAS (X-0009-LX-20). This work was supported by grant PID2019-103869RB-C31 funded by MCIN/AEI/10.13039/ 501100011033.
 
